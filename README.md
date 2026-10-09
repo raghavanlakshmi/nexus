@@ -1,6 +1,10 @@
 # Nexus
 ### A multi-agent post-hospital recovery co-pilot
 
+[![tests](https://github.com/raghavanlakshmi/nexus/actions/workflows/tests.yml/badge.svg)](https://github.com/raghavanlakshmi/nexus/actions/workflows/tests.yml)
+![python](https://img.shields.io/badge/python-3.11-blue)
+![license](https://img.shields.io/badge/license-MIT-green)
+
 Nexus turns a hospital discharge summary into a 30-day recovery companion. It tracks medications,
 runs daily symptom check-ins, schedules follow-ups, and escalates to a human before anything goes wrong.
 
@@ -22,14 +26,14 @@ Five specialised agents coordinated by two LangGraph state machines:
 | **Escalation** | Tiered response for RED days: draft for provider (Tier 1), notify emergency contact (Tier 2), show 911 screen (Tier 3) |
 | **Admin** | Appointment reminders, family updates, weekly summaries |
 
-```
-Intake graph:      intake_agent ──► care_plan_agent          (stops early if the PDF can't be parsed)
-Monitoring graph:  monitoring_agent ──► escalation_agent ──► admin_agent    (RED)
-                   monitoring_agent ──────────────────────► admin_agent    (GREEN / YELLOW)
-```
+![Nexus: 5 agents across 2 LangGraph graphs](docs/images/nexus_workflow.png)
 
-**Human in the loop:** every outbound message (provider drafts, family updates, escalations) goes
-through an approval queue before it is sent.
+Intake stops early if the PDF can't be parsed.
+
+**Human in the loop:** clinical content — provider messages and medication-conflict alerts — waits in
+an approval queue until a person approves it. Sent automatically: appointment reminders and weekly
+summaries to the caregiver, and an SMS to the emergency contact on a Tier 2/3 escalation, only if the
+patient consented.
 
 **Instrumentation:** every Claude call goes through `instrumentation/usage_tracker.py`, which logs
 tokens, cost and latency per phase; the *System Usage (Debug)* page shows the totals. The OpenFDA
@@ -76,6 +80,16 @@ Voice check-in needs `ffmpeg` on your PATH (`packages.txt` installs it on Stream
 `data/` contains ten synthetic discharge summaries covering different conditions and levels of
 detail. Start with `01_chf_john_demo.pdf`. The `*_sparse.pdf` files deliberately omit information
 to test how the agents handle missing data.
+
+### Tests
+
+```bash
+pip install -r requirements-dev.txt
+python -m pytest -q tests        # offline, no API keys needed
+```
+
+The tests cover graph routing (RED → escalation, GREEN/YELLOW → admin, unparseable PDF stops early)
+and the escalation tiers — including a test that documents the paraphrase limitation below.
 
 ---
 

@@ -1,35 +1,33 @@
-# Direct dependencies only. Versions are left open (with a few safe bounds) so pip
-# resolves wheels for whatever Python the host runs — this avoids the build failures
-# the old fully-pinned, Python-3.11-frozen file caused on newer cloud Python.
-# Transitive deps (numpy, pandas, pyarrow, altair, protobuf, tornado, gitpython, ...)
-# are pulled automatically by streamlit and the SDKs below.
+# Direct dependencies only, with lower bounds at the versions Nexus was built on and
+# major-version caps where the API matters. Nothing is fully pinned, so pip can resolve
+# wheels for whatever Python the host runs (a fully pinned Python-3.11 freeze broke the
+# Streamlit Cloud build). Transitive deps are pulled in by streamlit and the SDKs below.
 
 # Web UI
-streamlit
+streamlit>=1.58,<2
 
 # LLM SDKs
-anthropic
-openai
+anthropic>=0.109,<1
+openai>=2.43,<3          # Nebius Token Factory (OpenAI-compatible API)
 
-# Agent orchestration — pin to the 1.x line that matches local (StateGraph lives in
-# langgraph.graph here). langgraph pulls its own compatible langchain-core/checkpoint.
+# Agent orchestration (StateGraph lives in langgraph.graph on the 1.x line)
 langgraph>=1.2.5,<2
 
 # Vector store (v5 API: `from pinecone import Pinecone`)
 pinecone-client>=5,<6
 
 # PDF parsing (intake agent)
-PyMuPDF
+PyMuPDF>=1.27
 
 # HTTP — OpenFDA interaction checks + ElevenLabs STT REST calls
-requests
+requests>=2.32
 
 # Environment variables
-python-dotenv
+python-dotenv>=1.0
 
 # Voice check-in (requires ffmpeg, installed via packages.txt)
-streamlit-audiorecorder
-pydub
+streamlit-audiorecorder>=0.0.6
+pydub>=0.25
 
 # SMS notifications (escalation agent)
-twilio
+twilio>=9,<10

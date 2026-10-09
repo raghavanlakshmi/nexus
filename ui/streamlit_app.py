@@ -829,6 +829,8 @@ with st.sidebar:
         st.session_state.page = "provider_summary"
     if st.button("🏥  Hospital History", use_container_width=True):
         st.session_state.page = "hospital_history"
+    if st.button("📈  System Usage (Debug)", use_container_width=True):
+        st.session_state.page = "system_usage"
 
 # ── Helper to avoid duplicating monitoring logic ──────────────────────────────
 def _run_monitoring(state):
@@ -1849,3 +1851,41 @@ elif st.session_state.page == "hospital_history":
             st.rerun()
         elif submitted:
             st.error("Please fill in admission date, discharge date, and diagnosis at minimum.")
+
+# ── PAGE: SYSTEM USAGE (DEBUG) ───────────────────────────────────────────────
+# Added for the Hub vs. Nexus comparison: surfaces tokens / cost / latency measured
+# on every Claude call this session via instrumentation.usage_tracker.tracked_claude_call.
+elif st.session_state.page == "system_usage":
+    state = st.session_state.recovery_state
+    if not state:
+        st.warning("Please complete onboarding first.")
+    else:
+        from instrumentation.usage_tracker import summarize_usage
+        st.title("Token & Cost Usage — This Session")
+        st.caption(
+            "Measured on every Claude call this session via tracked_claude_call. "
+            "Use these numbers for the Hub vs. Nexus comparison (Phase 10)."
+        )
+        usage = summarize_usage(state)
+
+        if usage["total_calls"] == 0:
+            st.info("No Claude calls logged yet. Run intake and at least one check-in first.")
+        else:
+            col1, col2, col3, col4 = st.columns(4)
+            with col1:
+                st.metric("Total Claude calls", usage["total_calls"])
+            with col2:
+                st.metric("Total cost", f"${usage['total_cost_usd']:.4f}")
+            with col3:
+                st.metric("Total latency", f"{usage['total_latency_ms']:.0f} ms")
+            with col4:
+                st.metric(
+                    "Tokens (in / out)",
+                    f"{usage['total_input_tokens']} / {usage['total_output_tokens']}"
+                )
+
+            st.subheader("By phase")
+            st.json(usage["by_phase"])
+
+            st.subheader("Raw token log")
+            st.json(state.get("token_log", []))

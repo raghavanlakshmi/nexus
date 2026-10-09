@@ -1,4 +1,5 @@
 from anthropic import Anthropic
+from instrumentation.usage_tracker import tracked_claude_call
 from tools.openfda import check_medication_interactions
 from tools.pinecone_store import retrieve_patient_history
 import json
@@ -110,7 +111,8 @@ def run_care_plan_agent(state: dict) -> dict:
     flagged_meds = [m for m in state["medications"] if m.get("interaction_flag")]
 
     try:
-        response = client.messages.create(
+        response = tracked_claude_call(
+            client, phase="careplan", state=state,
             model="claude-sonnet-4-6",
             max_tokens=5000,
             system=CARE_PLAN_SYSTEM_PROMPT,

@@ -1,4 +1,5 @@
 from anthropic import Anthropic
+from instrumentation.usage_tracker import tracked_claude_call
 from tools.pdf_parser import parse_discharge_pdf
 from tools.pinecone_store import store_discharge_summary
 import json
@@ -54,7 +55,8 @@ def run_intake_agent(state: dict) -> dict:
 
     # Step 2: Extract structured data via Claude
     try:
-        response = client.messages.create(
+        response = tracked_claude_call(
+            client, phase="intake", state=state,
             model="claude-sonnet-4-6",
             max_tokens=2000,
             system=INTAKE_SYSTEM_PROMPT,

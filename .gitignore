@@ -27,3 +27,5 @@ data/*.py
 
 # Keep the demo discharge PDFs for graders — overrides the global *.pdf ignore above
 !data/*.pdf
+# Discharge PDFs uploaded through the app at runtime
+data/*_discharge.pdf

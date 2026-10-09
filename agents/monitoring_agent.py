@@ -1,4 +1,5 @@
 from anthropic import Anthropic
+from instrumentation.usage_tracker import tracked_claude_call
 from tools.pinecone_store import store_check_in, retrieve_patient_history
 from dotenv import load_dotenv
 import json
@@ -138,7 +139,8 @@ def run_monitoring_agent(state: dict, check_in_responses: dict) -> dict:
     recent_history = history[-7:] if len(history) > 7 else history
 
     try:
-        response = client.messages.create(
+        response = tracked_claude_call(
+            client, phase="monitoring", state=state,
             model="claude-sonnet-4-6",
             max_tokens=1000,
             system=MONITORING_SYSTEM_PROMPT,
